@@ -929,7 +929,7 @@ class TCPServer:
                 except ValueError:
                     return "Error: 올바른 숫자를 입력해주세요."
             elif msg=="exit":
-                self.status=="all"
+                self.status="all"
                 client_socket.send("Enter command (do_all, fd, fg, qc, exit): ".encode('utf-8'))
 
 
@@ -996,7 +996,7 @@ class TCPServer:
                 return 
                 
             elif msg=="exit":
-                self.status=="all"
+                self.status="all"
                 client_socket.send("Enter command (do_all, fd, fg, qc, exit): ".encode('utf-8'))    ### 단조 과정은 잡기, 해머질, 수평 그라인딩, 수직 그라인딩, 비틀기
 
     def qc_message(self,message,client_socket):
@@ -1021,7 +1021,7 @@ class TCPServer:
             
             
             elif message=="exit":
-                self.status=="all"
+                self.status="all"
                 client_socket.send("Enter command (do_all, fd, fg, qc, tw, exit): ".encode('utf-8'))
 
     def handle_message(self, message,client_socket):
