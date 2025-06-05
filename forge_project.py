@@ -1,3 +1,21 @@
+# project name : 나의 완벽한 비서 (장인 보조 협동 로봇 - 대장간 프로젝트)
+# date : 2025-06-05
+# author : 두산 로벨스
+# ver : 1.0 찐찐 최종
+'''
+TCPServer 클래스에서 모든 동작들을 시키는데  init에 선언된 클래스들을 확인 하면 어떤 동작을 수행 시키는가 시퀀스를 이해하기 쉬울 것임.
+    def __init__(self, host='0.0.0.0', port=1234):
+        self.sp = SpitRotationTask() 단조 - 비틀림
+        self.qc = QCManager() QC무게 측정
+        self.mcup = MoveCup() 주조
+        self.fg = Forge() 단조 - 수직, 해머, 잡기
+        self.gt = GrindingTask() - 단조 수평
+        self.mj=Move_Js() - j 움직임 예외 처리
+참고로 print문은 자동으로 휴대폰 tcp연결된 곳으로 가며, 한글 지원 안한다. 그걸 pc에서 확인 하고 싶으면 client_print_redirector 3개 있는거 전부 주석 처리하면됨.
+-> 폰으로 확인하면 에러 상황에 휴대폰 연결이 끊기며 정지함. 그래서 무슨 에러인지 확인은 어려움
+
+'''
+
 import rclpy
 import DR_init
 import threading
@@ -223,6 +241,8 @@ class MoveCup:
         wait(1.0)
 
     def move_cup_position(self):
+        print("주조 공정 시작")  # 추가
+        print("레들 위치로 이동 중...")  # 추가
         self.mj.move_j(p1_1, vel=DR_VEL_J, acc=DR_ACC_J)
         movel(p1_2, vel=DR_VEL_L, acc=DR_ACC_L)
         
@@ -238,6 +258,7 @@ class MoveCup:
                 release_compliance_ctrl()
                 wait(0.5)
                 self.cup_position = get_current_posx()[0]
+                print("레들 감지")  # 추가
                 print(self.cup_position)    # [623.517, -437.059, 225.996, 91.883, -89.140, -86.459]    497.910까지
                 break
 
@@ -249,15 +270,20 @@ class MoveCup:
         self.target_posx1 = deepcopy(self.cup_position)
         self.target_posx1[1] += 70.0
         movel(posx(self.target_posx1), vel=DR_VEL_L, acc=DR_ACC_L, ref=DR_BASE)
+        print("release")  # 추가
         self.release()
         self.target_posx1[1] -= 126.0
         movel(posx(self.target_posx1), vel=DR_VEL_L, acc=DR_ACC_L, ref=DR_BASE)
+        print("grip")  # 추가
         self.grip()
 
     def move_goal_position(self):
+        print("거푸집 위치로 이동 시작")  # 추가
         self.target_posx2 = deepcopy(self.target_posx1)
         self.target_posx2[2] += 31.0
+        print("거푸집 위치로 이동 중...")  # 추가
         movel(posx(self.target_posx2), vel=DR_VEL_L, acc=DR_ACC_L, ref=DR_BASE)
+
         self.target_posx2[0] += 64.28
         self.target_posx2[1] += 367.26
         x1 = posx(self.target_posx2)
@@ -267,10 +293,13 @@ class MoveCup:
         self.target_posx2[0] -= 99.31
         self.target_posx2[1] -= 167.14
         x3 = posx(self.target_posx2)
+        print("거푸집 위치로 천천히 이동 중...")  # 추가
         movesx([x1, x2, x3], vel=[50, 20], acc=[60, 30])
+        print("거푸집 위치로 이동 완료")  # 추가
 
     def pour_action(self):
         ##
+        print("용탕 균일화 시작")  # 추가
         move_periodic(
             amp=[15.0, 20.0, 0.0, 0.0, 0.0, 0.0],
             period=[2.4, 1.8, 0.0, 0.0, 0.0, 0.0],
@@ -279,23 +308,32 @@ class MoveCup:
             repeat=self.repeat_m,
             ref=DR_BASE
         )
+        print("용탕 균일화 완료")  # 추가
+
+        print("용탕 주입 시작")  # 추가
         movel(pour_position, vel=DR_VEL_L, acc=DR_ACC_L)
         self.pour_pose = deepcopy(pour_position)
         self.pour_pose[3:] = [94.42, -157.26, -82.15]
+        print("용탕 주입 중, 1/2")  # 추가
         movel(posx(self.pour_pose), vel=24, acc=20)
         wait(0.5)
         self.pour_pose[3:] = [82.71, 166.37, -93.31]
         movel(posx(self.pour_pose), vel=24, acc=20)
+        print("용탕 주입 중, 2/2")  # 추가
         movel(pour_position, vel=DR_VEL_L, acc=DR_ACC_L)
+        print("용탕 주입 완료")  # 추가
 
     def final_action(self):
+        print("레들 원위치 시작")  # 추가
         movesj([p5_1, p5_2, p5_3], vel=DR_VEL_J, acc=DR_ACC_J)
         self.release()
+        print("레들 원위치 완료")  # 추가
         wait(0.2)
         self.final_position = get_current_posx()[0]
         self.final_position[1] += 100.0
         movel(self.final_position, vel=DR_VEL_L, acc=DR_ACC_L)
         self.grip_all()
+        print("주조 공정 완료")  # 추가
 
     def run(self,move_repeat=5):
         self.release()
